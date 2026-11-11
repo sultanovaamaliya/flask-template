@@ -66,10 +66,14 @@ def index():
 # При загрузке модуля декоратор регистрирует task_list как обработчик GET /tasks.
 @app.get("/tasks")
 def task_list():
+    done = request.args.get("done")
+    if done not in (None, "0", "1"):
+        done = None
+    done_filter = None if done is None else int(done)
     # Flask передаёт задачи из SQLite в шаблон Jinja templates/tasks.html.
     # В шаблоне список доступен как переменная tasks. Результат — HTML.
     return render_template(
-        "tasks.html", tasks=read_tasks(), max_title_length=MAX_TITLE_LENGTH
+        "tasks.html", tasks=read_tasks(done_filter), max_title_length=MAX_TITLE_LENGTH, done_filter=done
     )
 
 
@@ -85,6 +89,7 @@ def task_create():
             title=title,
             error=error,
             max_title_length=MAX_TITLE_LENGTH,
+            done_filter=None,
         ), 400
     save_task(title)
     # После POST браузер получает адрес страницы, которую нужно запросить GET.
@@ -123,6 +128,26 @@ def api_task_create():
         return {"error": error}, 400
     task_id = save_task(title)
     return {"id": task_id, "title": title.strip(), "done": False}, 201
+
+
+@app.get("/api/tasks/<int:task_id>")
+def api_task_get(task_id):
+    task = get_db().execute(
+        "SELECT id, title, done FROM task WHERE id = ?", (task_id,)
+    ).fetchone()
+    if task is None:
+        abort(404)
+    return task_json(task)
+
+
+@app.delete("/api/tasks/<int:task_id>")
+def api_task_delete(task_id):
+    db = get_db()
+    cursor = db.execute("DELETE FROM task WHERE id = ?", (task_id,))
+    if cursor.rowcount == 0:
+        abort(404)
+    db.commit()
+    return "", 204
 
 
 if __name__ == "__main__":
