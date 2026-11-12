@@ -1,60 +1,63 @@
-{# Шаблон Jinja. {{ ... }} выводит значение, а {% ... %} задаёт условия и циклы. -#}
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Список задач</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <main>
-      <h1>Список задач</h1>
+<head>
+  <meta charset="utf-8">
+  <title>Гостевая книга</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; }
+    .error { color: red; }
+    .review { border-bottom: 1px solid #ccc; padding: .5rem 0; }
+    .review .author { font-weight: bold; }
+    .review .date { color: gray; font-size: .85em; }
+    .filters { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Гостевая книга</h1>
 
-      <nav class="filters">
-        <a href="{{ url_for('task_list') }}"
-           {% if done_filter is none %}class="active"{% endif %}>Все</a>
-        <a href="{{ url_for('task_list', done=0) }}"
-           {% if done_filter == "0" %}class="active"{% endif %}>В работе</a>
-        <a href="{{ url_for('task_list', done=1) }}"
-           {% if done_filter == "1" %}class="active"{% endif %}>Выполнены</a>
-      </nav>
+  <div class="filters">
+    <form method="get" action="/reviews">
+      <label>Фильтр по имени:
+        <input name="author" value="{{ current_author }}">
+      </label>
+      <button type="submit">Найти</button>
+      {% if current_author %}
+        <a href="/reviews">Сбросить</a>
+      {% endif %}
+    </form>
+  </div>
 
-      <form method="post" action="{{ url_for('task_create') }}" class="add-task">
-        <label for="title">Новая задача</label>
-        <div class="form-row">
-          <input
-            id="title"
-            name="title"
-            value="{{ title | default('') }}"
-            maxlength="{{ max_title_length }}"
-            placeholder="Разобраться с HTTP"
-            {% if error %}aria-invalid="true" aria-describedby="error"{% endif %}
-            required
-          >
-          <button type="submit">Добавить</button>
-        </div>
-        {% if error %}
-          <p id="error" class="error" role="alert">{{ error }}</p>
-        {% endif %}
-      </form>
+  {% if errors %}
+  <ul class="error">
+    {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+  </ul>
+  {% endif %}
 
-      <ul class="tasks">
-        {% for task in tasks %}
-          <li>
-            <span class="{% if task.done %}done{% endif %}">{{ task.title }}</span>
-            <form method="post" action="{{ url_for('task_toggle', task_id=task.id) }}">
-              <button type="submit" class="secondary">
-                {% if task.done %}Вернуть в работу{% else %}Готово{% endif %}
-              </button>
-            </form>
-          </li>
-        {% else %}
-          <li class="empty">Пока нет задач. Добавьте первую.</li>
-        {% endfor %}
-      </ul>
+  <h2>Оставить отзыв</h2>
+  <form method="post" action="/reviews">
+    <p>
+      <label>Имя<br>
+        <input name="author" maxlength="80" required
+               value="{{ form_author | default('') }}">
+      </label>
+    </p>
+    <p>
+      <label>Отзыв<br>
+        <textarea name="text" rows="4" cols="50" required>{{ form_text | default('') }}</textarea>
+      </label>
+    </p>
+    <button type="submit">Отправить</button>
+  </form>
 
-      <p class="api-link"><a href="{{ url_for('api_task_list') }}">Посмотреть задачи в JSON</a></p>
-    </main>
-  </body>
+  <h2>Отзывы ({{ reviews | length }})</h2>
+  {% for r in reviews %}
+  <div class="review">
+    <span class="author">{{ r.author }}</span>
+    <span class="date">{{ r.created }}</span>
+    <p>{{ r.text }}</p>
+  </div>
+  {% else %}
+  <p>Пока нет отзывов.</p>
+  {% endfor %}
+</body>
 </html>
