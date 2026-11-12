@@ -60,7 +60,7 @@ python client.py --done 0
 | --- | --- |
 | [app.py](app.py) | Маршруты Flask, проверка ввода и запросы к базе |
 | [db.py](db.py) и [schema.sql](schema.sql) | Подключение к SQLite и создание таблицы |
-| [templates/tasks.html](templates/tasks.html) | Шаблон страницы и HTML-формы |
+| [templates/tasks.html](templates/review.html) | Шаблон страницы и HTML-формы |
 | [client.py](client.py) | Отправка запросов через HTTPX и чтение ответа |
 | [tests/test_app.py](tests/test_app.py) | Тесты pytest для HTTP-ответов и сохранения данных |
 

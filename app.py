@@ -70,10 +70,10 @@ def task_list():
     if done not in (None, "0", "1"):
         done = None
     done_filter = None if done is None else int(done)
-    # Flask передаёт задачи из SQLite в шаблон Jinja templates/tasks.html.
+    # Flask передаёт задачи из SQLite в шаблон Jinja templates/review.html.
     # В шаблоне список доступен как переменная tasks. Результат — HTML.
     return render_template(
-        "tasks.html", tasks=read_tasks(done_filter), max_title_length=MAX_TITLE_LENGTH, done_filter=done
+        "review.html", tasks=read_tasks(done_filter), max_title_length=MAX_TITLE_LENGTH, done_filter=done
     )
 
 
@@ -84,7 +84,7 @@ def task_create():
     if error:
         # Снова рендерим шаблон Jinja, сохраняя введённый текст и показывая ошибку.
         return render_template(
-            "tasks.html",
+            "review.html",
             tasks=read_tasks(),
             title=title,
             error=error,
