@@ -105,3 +105,54 @@ def test_initialization_preserves_existing_tasks(app, client):
     assert result.exit_code == 0, result.exception or result.output
     tasks = client.get("/api/tasks").json["tasks"]
     assert [task["title"] for task in tasks] == ["Сохранить"]
+
+
+def test_api_get_task(client):
+    resp = client.post("/api/tasks", json={"title": "Найти меня"})
+    task_id = resp.get_json()["id"]
+
+    resp = client.get(f"/api/tasks/{task_id}")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["id"] == task_id
+    assert data["title"] == "Найти меня"
+    assert data["done"] is False
+
+
+def test_api_get_task_not_found(client):
+    resp = client.get("/api/tasks/99999")
+    assert resp.status_code == 404
+
+
+def test_api_delete_task(client): #delete удаляет задачу
+    resp = client.post("/api/tasks", json={"title": "Удали меня"})
+    task_id = resp.get_json()["id"]
+
+    resp = client.delete(f"/api/tasks/{task_id}")
+    assert resp.status_code == 204
+    assert resp.data == b""
+
+    #после удаления GET возвращает 404
+    resp = client.get(f"/api/tasks/{task_id}")
+    assert resp.status_code == 404
+
+
+def test_api_delete_not_found(client): #задачи нет
+    resp = client.delete("/api/tasks/99999")
+    assert resp.status_code == 404
+
+
+def test_api_delete_idempotent(client): #повторный delete
+    resp = client.post("/api/tasks", json={"title": "Дважды"})
+    task_id = resp.get_json()["id"]
+
+    client.delete(f"/api/tasks/{task_id}")
+    resp = client.delete(f"/api/tasks/{task_id}")
+    assert resp.status_code == 404
+
+
+def test_html_filter_done(client):
+    client.post("/tasks", data={"title": "Задача"})
+    assert client.get("/tasks?done=0").status_code == 200
+    assert client.get("/tasks?done=1").status_code == 200
+    assert client.get("/tasks").status_code == 200
