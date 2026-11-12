@@ -93,14 +93,14 @@ def review_create():
     return redirect(url_for("reviews_page"), code=303)
 
 
-@app.get("/api/reviews")
+@app.get("/api/recall")
 def api_review_list():
     author = request.args.get("author", "").strip() or None
     rows = read_reviews(author)
     return {"reviews": [review_json(r) for r in rows]}
 
 
-@app.post("/api/reviews")
+@app.post("/api/recall")
 def api_review_create():
     if not request.is_json:
         return {"error": "Отправьте JSON с Content-Type: application/json."}, 415

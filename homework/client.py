@@ -1,32 +1,30 @@
-"""Python-клиент локального API. Сначала запустите Flask в другом терминале."""
-
 import argparse
 
 import httpx
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:5000")
-    parser.add_argument("--add", metavar="TITLE", help="Создать задачу перед чтением списка")
-    parser.add_argument("--done", choices=["0", "1"], help="Фильтр по выполнению")
+    parser.add_argument("--add", nargs=2, metavar=("AUTHOR", "REVIEW"), help="Добавить отзыв")
+    parser.add_argument("--author", help="Фильтр по имени")
     args = parser.parse_args()
 
-    try:
-        with httpx.Client(base_url=args.url, timeout=5.0) as client:
-            if args.add is not None:
-                response = client.post("/api/tasks", json={"title": args.add})
-                response.raise_for_status()
-                print("Создана задача:", response.json())
+    base = args.url.rstrip("/")
 
-            params = {} if args.done is None else {"done": args.done}
-            response = client.get("/api/tasks", params=params)
-            response.raise_for_status()
-            print("Статус:", response.status_code)
-            print("Content-Type:", response.headers["content-type"])
-            for task in response.json()["tasks"]:
-                mark = "x" if task["done"] else " "
-                print(f"[{mark}] {task['id']}: {task['title']}")
+    try:
+        if args.add:
+            resp = httpx.post(f"{base}/api/recall", json={"author": args.add[0], "review": args.add[1]})
+            print(resp.status_code, resp.json())
+            return
+
+        params = {}
+        if args.author:
+            params["author"] = args.author
+        resp = httpx.get(f"{base}/api/recall", params=params)
+        print(resp.status_code)
+        for r in resp.json().get("reviews", []):
+            print(f"  [{r['id']}] {r['author']}: {r['review']}")
     except httpx.HTTPStatusError as error:
         parser.exit(1, f"Сервер вернул HTTP {error.response.status_code}.\n")
     except httpx.RequestError:
